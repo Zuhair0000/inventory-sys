@@ -1,0 +1,241 @@
+helo
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventory System</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding-top: 80px;
+        padding-left: 96px;
+        padding-right: 24px;
+        margin-bottom: 100px;
+        background-color: #000000;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        color: #fff;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid rgb(255, 255, 255);
+      }
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+      }
+      form {
+        margin-bottom: 20px;
+        color: #fff;
+      }
+      form input {
+        margin-right: 10px;
+        color: #fff;
+      }
+      h1 {
+        color: #fff;
+      }
+      #productName,
+      #productQuantity,
+      #searchInput {
+        border: 0;
+        outline: none;
+        background: #262626;
+        padding: 15px;
+        margin: 15px 0;
+        color: #fff;
+        font-size: 18px;
+        border-radius: 6px;
+      }
+      #searchForm {
+        margin-bottom: 20px;
+        color: #fff;
+      }
+      #searchInput {
+        width: calc(100% - 100px);
+      }
+      #searchButton {
+        padding: 15px;
+        margin: 15px 0;
+        background-color: black;
+        color: #fff;
+        border: 1px solid #ff004f;
+        cursor: pointer;
+        font-size: 18px;
+        border-radius: 6px;
+        transition: background 0.5s;
+      }
+
+      .btn {
+        margin: 50px auto;
+        width: fit-content;
+        border: 1px solid #ff004f;
+        padding: 14px 50px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: rgb(255, 255, 255);
+        transition: background 0.5s;
+        background-color: black;
+      }
+      .btn:hover,
+      #searchButton:hover,
+      .delete-btn:hover {
+        background: #ff004f;
+        color: white;
+      }
+
+      .delete-btn {
+        border: 1px solid #ff004f;
+        padding: 14px 50px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: rgb(255, 255, 255);
+        transition: background 0.5s;
+        background-color: black;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Store Inventory System</h1>
+
+    <!-- Search Form -->
+
+    <form id="productForm">
+      <label for="productName">Product Name:</label>
+      <input type="text" id="productName" required />
+
+      <label for="productQuantity">Quantity:</label>
+      <input type="number" id="productQuantity" required />
+
+      <button type="submit" class="btn">Add/Update Product</button>
+    </form>
+
+    <form id="searchForm">
+      <input type="text" id="searchInput" placeholder="Search products..." />
+      <button type="button" id="searchButton">Search</button>
+    </form>
+    <table>
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Quantity</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryTable">
+        <!-- Inventory items will be inserted here -->
+      </tbody>
+    </table>
+
+    <script>
+      document
+        .getElementById("productForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          const productName = document.getElementById("productName").value;
+          const productQuantity =
+            document.getElementById("productQuantity").value;
+
+          updateProductInInventory(productName, productQuantity);
+
+          document.getElementById("productName").value = "";
+          document.getElementById("productQuantity").value = "";
+        });
+
+      document
+        .getElementById("searchButton")
+        .addEventListener("click", function () {
+          const searchTerm = document
+            .getElementById("searchInput")
+            .value.toLowerCase();
+          filterInventory(searchTerm);
+        });
+
+      function addProductToInventory(name, quantity) {
+        const table = document.getElementById("inventoryTable");
+        const row = table.insertRow();
+        const cellName = row.insertCell(0);
+        const cellQuantity = row.insertCell(1);
+        const cellActions = row.insertCell(2);
+
+        cellName.textContent = name;
+        cellQuantity.textContent = quantity;
+        cellActions.innerHTML =
+          '<button onclick="deleteProduct(this)" class="delete-btn">Delete</button>';
+
+        saveInventory();
+      }
+
+      function updateProductInInventory(name, quantity) {
+        const table = document.getElementById("inventoryTable");
+        let productFound = false;
+
+        Array.from(table.rows).forEach((row) => {
+          if (row.cells[0].textContent === name) {
+            row.cells[1].textContent = quantity;
+            productFound = true;
+          }
+        });
+
+        if (!productFound) {
+          addProductToInventory(name, quantity);
+        } else {
+          saveInventory();
+        }
+      }
+
+      function deleteProduct(button) {
+        const row = button.parentElement.parentElement;
+        document.getElementById("inventoryTable").deleteRow(row.rowIndex - 1);
+
+        saveInventory();
+      }
+
+      function saveInventory() {
+        const table = document.getElementById("inventoryTable");
+        const rows = Array.from(table.rows);
+        const inventory = rows.map((row) => {
+          return {
+            name: row.cells[0].textContent,
+            quantity: row.cells[1].textContent,
+          };
+        });
+
+        localStorage.setItem("inventory", JSON.stringify(inventory));
+      }
+
+      function loadInventory() {
+        const savedInventory = localStorage.getItem("inventory");
+        if (savedInventory) {
+          const inventory = JSON.parse(savedInventory);
+          inventory.forEach((item) =>
+            addProductToInventory(item.name, item.quantity)
+          );
+        }
+      }
+
+      function filterInventory(searchTerm) {
+        const table = document.getElementById("inventoryTable");
+        const rows = Array.from(table.rows);
+        rows.forEach((row) => {
+          const productName = row.cells[0].textContent.toLowerCase();
+          if (productName.includes(searchTerm)) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        });
+      }
+
+      window.onload = loadInventory;
+    </script>
+  </body>
+</html>
